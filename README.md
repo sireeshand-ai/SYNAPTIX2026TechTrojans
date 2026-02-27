@@ -1,0 +1,1 @@
+# SYNAPTIX2026TechTrojans
