@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Post an Internship</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <h1 class="navbar-title">🏢 Post an Internship</h1>
+            <a href="/" class="btn btn-secondary">← Back to Home</a>
+        </div>
+    </nav>
+
+    <main class="container form-container">
+        <div class="card form-card">
+            <div class="card-header">
+                <h2>Post Your Internship Opportunity</h2>
+                <p>Define requirements and find the best-matched candidates</p>
+            </div>
+
+            <form id="projectForm" class="form">
+                <!-- Company Information -->
+                <fieldset>
+                    <legend>Company Information</legend>
+                    
+                    <div class="form-group">
+                        <label for="company">Company Name *</label>
+                        <input type="text" id="company" name="company" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="role">Role/Position Title *</label>
+                        <input type="text" id="role" name="role" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="duration">Duration *</label>
+                        <input type="text" id="duration" name="duration" placeholder="e.g., 3 months, 6 months" required>
+                    </div>
+                </fieldset>
+
+                <!-- Required Skills -->
+                <fieldset>
+                    <legend>Required Skills *</legend>
+                    <p class="help-text">Add at least one skill requirement with weight (importance %) and minimum level</p>
+                    
+                    <div id="skillsContainer" class="dynamic-container">
+                        <div class="project-skill-input">
+                            <input type="text" class="skill-name" placeholder="Skill name (e.g., Python)" required>
+                            <input type="number" class="skill-weight" placeholder="Weight %" min="0" max="100" value="20" required>
+                            <select class="skill-level" required>
+                                <option value="">Min Level</option>
+                                <option value="1">Beginner (1)</option>
+                                <option value="2">Intermediate (2)</option>
+                                <option value="3">Advanced (3)</option>
+                            </select>
+                            <button type="button" class="btn btn-danger" onclick="removeSkill(this)">Remove</button>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-secondary" onclick="addSkill()">+ Add Skill Requirement</button>
+                </fieldset>
+
+                <!-- Compensation -->
+                <fieldset>
+                    <legend>Compensation</legend>
+                    
+                    <div class="form-group checkbox">
+                        <input type="checkbox" id="stipendOffered" name="stipendOffered" onchange="toggleStipendAmount()">
+                        <label for="stipendOffered">Stipend Offered</label>
+                    </div>
+
+                    <div id="stipendAmountDiv" class="form-group" style="display: none;">
+                        <label for="stipendAmount">Monthly Stipend Amount (₹) *</label>
+                        <input type="number" id="stipendAmount" name="stipendAmount" min="0" step="100">
+                    </div>
+                </fieldset>
+
+                <!-- Fairness Notice -->
+                <div class="privacy-notice">
+                    <strong>⚖️ Unbiased Matching:</strong> Candidates will be matched based solely on their skills and experience requirements you specify. The algorithm ensures fair, transparent ranking.
+                </div>
+
+                <!-- Form Actions -->
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Post Internship</button>
+                    <button type="reset" class="btn btn-secondary">Clear Form</button>
+                </div>
+
+                <!-- Status Message -->
+                <div id="statusMessage" class="status-message" style="display: none;"></div>
+            </form>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <p>&copy; 2026 Skill-Based Internship Matching Platform. All rights reserved.</p>
+    </footer>
+
+    <script>
+        function toggleStipendAmount() {
+            const checkbox = document.getElementById('stipendOffered');
+            const stipendDiv = document.getElementById('stipendAmountDiv');
+            if (checkbox.checked) {
+                stipendDiv.style.display = 'block';
+                document.getElementById('stipendAmount').required = true;
+            } else {
+                stipendDiv.style.display = 'none';
+                document.getElementById('stipendAmount').required = false;
+            }
+        }
+
+        // Handle skill input
+        function addSkill() {
+            const container = document.getElementById('skillsContainer');
+            const skillInput = document.createElement('div');
+            skillInput.className = 'project-skill-input';
+            skillInput.innerHTML = `
+                <input type="text" class="skill-name" placeholder="Skill name (e.g., Python)">
+                <input type="number" class="skill-weight" placeholder="Weight %" min="0" max="100" value="20">
+                <select class="skill-level">
+                    <option value="">Min Level</option>
+                    <option value="1">Beginner (1)</option>
+                    <option value="2">Intermediate (2)</option>
+                    <option value="3">Advanced (3)</option>
+                </select>
+                <button type="button" class="btn btn-danger" onclick="removeSkill(this)">Remove</button>
+            `;
+            container.appendChild(skillInput);
+        }
+
+        function removeSkill(button) {
+            button.parentElement.remove();
+        }
+
+        // Handle form submission
+        document.getElementById('projectForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            // Collect skills
+            const skillInputs = document.querySelectorAll('.project-skill-input');
+            const requiredSkills = [];
+            skillInputs.forEach(input => {
+                const skillName = input.querySelector('.skill-name').value.trim();
+                const weight = input.querySelector('.skill-weight').value;
+                const level = input.querySelector('.skill-level').value;
+                if (skillName && weight && level) {
+                    requiredSkills.push({
+                        skill_name: skillName,
+                        weight: parseFloat(weight),
+                        minimum_level: parseInt(level)
+                    });
+                }
+            });
+
+            if (requiredSkills.length === 0) {
+                showStatus('Please add at least one skill requirement', 'error');
+                return;
+            }
+
+            const data = {
+                company_name: document.getElementById('company').value,
+                role_title: document.getElementById('role').value,
+                duration: document.getElementById('duration').value,
+                stipend_offered: document.getElementById('stipendOffered').checked,
+                stipend_amount: document.getElementById('stipendAmount').value || 0,
+                required_skills: requiredSkills
+            };
+
+            try {
+                const response = await fetch('/add_project', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    showStatus('✓ Internship posted successfully! Redirecting...', 'success');
+                    setTimeout(() => {
+                        window.location.href = `/results.html?project=${result.project_id}`;
+                    }, 2000);
+                } else {
+                    showStatus('Error: ' + result.error, 'error');
+                }
+            } catch (error) {
+                showStatus('Error: ' + error.message, 'error');
+            }
+        });
+
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('statusMessage');
+            statusDiv.textContent = message;
+            statusDiv.className = 'status-message ' + type;
+            statusDiv.style.display = 'block';
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register as Candidate</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <h1 class="navbar-title">👤 Candidate Registration</h1>
+            <a href="/" class="btn btn-secondary">← Back to Home</a>
+        </div>
+    </nav>
+
+    <main class="container form-container">
+        <div class="card form-card">
+            <div class="card-header">
+                <h2>Register Your Profile</h2>
+                <p>Build your candidate profile with skills and experience</p>
+            </div>
+
+            <form id="candidateForm" class="form">
+                <!-- Personal Information -->
+                <fieldset>
+                    <legend>Personal Information</legend>
+                    
+                    <div class="form-group">
+                        <label for="name">Full Name *</label>
+                        <input type="text" id="name" name="name" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="email">Email Address *</label>
+                        <input type="email" id="email" name="email" required>
+                    </div>
+                </fieldset>
+
+                <!-- Skills -->
+                <fieldset>
+                    <legend>Skills *</legend>
+                    <p class="help-text">Add at least one skill with proficiency level</p>
+                    
+                    <div id="skillsContainer" class="dynamic-container">
+                        <div class="skill-input">
+                            <input type="text" class="skill-name" placeholder="Skill name (e.g., Python, JavaScript)" required>
+                            <select class="skill-level" required>
+                                <option value="">Select Level</option>
+                                <option value="1">Beginner (1)</option>
+                                <option value="2">Intermediate (2)</option>
+                                <option value="3">Advanced (3)</option>
+                            </select>
+                            <button type="button" class="btn btn-danger" onclick="removeSkill(this)">Remove</button>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-secondary" onclick="addSkill()">+ Add Skill</button>
+                </fieldset>
+
+                <!-- Experience -->
+                <fieldset>
+                    <legend>Professional Experience</legend>
+                    
+                    <div class="form-group">
+                        <label for="experience">Months of Experience *</label>
+                        <input type="number" id="experience" name="experience" min="0" value="0" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="projects">Projects Completed *</label>
+                        <input type="number" id="projects" name="projects" min="0" value="0" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="certifications">Certifications *</label>
+                        <input type="number" id="certifications" name="certifications" min="0" value="0" required>
+                    </div>
+                </fieldset>
+
+                <!-- Availability -->
+                <fieldset>
+                    <legend>Availability</legend>
+                    
+                    <div class="form-group">
+                        <label for="availability">Preferred Work Type *</label>
+                        <select id="availability" name="availability" required>
+                            <option value="">Select Availability</option>
+                            <option value="Full-time">Full-time</option>
+                            <option value="Part-time">Part-time</option>
+                        </select>
+                    </div>
+                </fieldset>
+
+                <!-- Privacy Notice -->
+                <div class="privacy-notice">
+                    <strong>🔒 Privacy & Fairness:</strong> Only your skills and experience are used for matching. No personal demographic information (gender, caste, religion, college) is collected or used in ranking.
+                </div>
+
+                <!-- Form Actions -->
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Register Profile</button>
+                    <button type="reset" class="btn btn-secondary">Clear Form</button>
+                </div>
+
+                <!-- Status Message -->
+                <div id="statusMessage" class="status-message" style="display: none;"></div>
+            </form>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <p>&copy; 2026 Skill-Based Internship Matching Platform. All rights reserved.</p>
+    </footer>
+
+    <script>
+        // Handle skill input
+        function addSkill() {
+            const container = document.getElementById('skillsContainer');
+            const skillInput = document.createElement('div');
+            skillInput.className = 'skill-input';
+            skillInput.innerHTML = `
+                <input type="text" class="skill-name" placeholder="Skill name (e.g., Python, JavaScript)">
+                <select class="skill-level">
+                    <option value="">Select Level</option>
+                    <option value="1">Beginner (1)</option>
+                    <option value="2">Intermediate (2)</option>
+                    <option value="3">Advanced (3)</option>
+                </select>
+                <button type="button" class="btn btn-danger" onclick="removeSkill(this)">Remove</button>
+            `;
+            container.appendChild(skillInput);
+        }
+
+        function removeSkill(button) {
+            button.parentElement.remove();
+        }
+
+        // Handle form submission
+        document.getElementById('candidateForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            // Collect skills
+            const skillInputs = document.querySelectorAll('.skill-input');
+            const skills = [];
+            skillInputs.forEach(input => {
+                const skillName = input.querySelector('.skill-name').value.trim();
+                const skillLevel = input.querySelector('.skill-level').value;
+                if (skillName && skillLevel) {
+                    skills.push({
+                        skill_name: skillName,
+                        skill_level: parseInt(skillLevel)
+                    });
+                }
+            });
+
+            if (skills.length === 0) {
+                showStatus('Please add at least one skill', 'error');
+                return;
+            }
+
+            const data = {
+                name: document.getElementById('name').value,
+                email: document.getElementById('email').value,
+                experience_months: parseInt(document.getElementById('experience').value),
+                projects_completed: parseInt(document.getElementById('projects').value),
+                certifications: parseInt(document.getElementById('certifications').value),
+                availability: document.getElementById('availability').value,
+                skills: skills
+            };
+
+            try {
+                const response = await fetch('/add_candidate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    showStatus('✓ Candidate registered successfully! Redirecting...', 'success');
+                    setTimeout(() => {
+                        window.location.href = '/';
+                    }, 2000);
+                } else {
+                    showStatus('Error: ' + result.error, 'error');
+                }
+            } catch (error) {
+                showStatus('Error: ' + error.message, 'error');
+            }
+        });
+
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('statusMessage');
+            statusDiv.textContent = message;
+            statusDiv.className = 'status-message ' + type;
+            statusDiv.style.display = 'block';
+        }
+    </script>
+</body>
+</html>
